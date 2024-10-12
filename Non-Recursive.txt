@@ -1,0 +1,131 @@
+Sub Ticker()
+
+        ' Define variables for calculations
+        Dim Ticker As String
+        Dim OpenValue As Double
+        Dim CloseValue As Double
+        Dim Quarterly_Change As Double
+        Dim Percent_Change As Double
+        Dim Total_Stock_Volume As Double
+
+        ' Initialize values
+        Quarterly_Change = 0
+        OpenValue = 0
+        CloseValue = 0
+        Total_Stock_Volume = 0
+
+        Dim summary As Integer
+        summary = 2
+
+        ' Determine the last row
+        Dim lastrow As Long
+        lastrow = Cells(Rows.Count, 1).End(xlUp).Row
+
+        ' Loop through each row of the data
+        For i = 2 To lastrow
+            ' Check if it's the same Ticker symbol
+            If Cells(i + 1, 1).Value <> Cells(i, 1).Value Then
+                Ticker = Cells(i, 1).Value
+                
+                ' Find the first occurrence of the Ticker to get Open Value
+                Dim j As Long
+                j = i
+                Do While j > 1 And Cells(j - 1, 1).Value = Ticker
+                    j = j - 1
+                Loop
+                OpenValue = Cells(j, 3).Value ' Get Open Value from the first occurrence
+                CloseValue = Cells(i, 6).Value
+                
+                ' Display Ticker name
+                Range("I" & summary).Value = Ticker
+                
+                ' Display open and close amounts
+                Range("J" & summary).Value = OpenValue
+                Range("K" & summary).Value = CloseValue
+                
+                ' Calculate changes
+                Quarterly_Change = CloseValue - OpenValue
+                Range("L" & summary).Value = Quarterly_Change
+                
+                If OpenValue <> 0 Then
+                    Percent_Change = Quarterly_Change / OpenValue
+                    Range("M:M").NumberFormat = "#0.00%"
+                Else
+                    Percent_Change = 0 ' Prevent division by zero
+                End If
+                
+                Range("M" & summary).Value = Percent_Change
+                
+                ' Sum up the total stock volume
+                Total_Stock_Volume = Total_Stock_Volume + Cells(i, 7).Value
+                Range("N" & summary).Value = Total_Stock_Volume
+                
+                summary = summary + 1
+                
+                ' Reset for the next ticker
+                OpenValue = 0
+                CloseValue = 0
+                Quarterly_Change = 0
+                Percent_Change = 0
+                Total_Stock_Volume = 0
+                
+            Else
+                ' Continue summing stock volume for the same ticker
+                Total_Stock_Volume = Total_Stock_Volume + Cells(i, 7).Value
+            End If
+        Next i
+        
+        ' Format cells based on Percent Change
+        For i = 2 To lastrow
+            If Cells(i, 12).Value > 0 Then
+                Cells(i, 12).Interior.ColorIndex = 4 ' Green for positive
+            ElseIf Cells(i, 12).Value < 0 Then
+                Cells(i, 12).Interior.ColorIndex = 3 ' Red for negative
+            Else
+                Cells(i, 12).Interior.ColorIndex = 0 ' No color
+            End If
+        Next i
+        
+        ' Format cells based on Percent Change
+        For i = 2 To lastrow
+            If Cells(i, 13).Value > 0 Then
+                Cells(i, 13).Interior.ColorIndex = 4 ' Green for positive
+            ElseIf Cells(i, 13).Value < 0 Then
+                Cells(i, 13).Interior.ColorIndex = 3 ' Red for negative
+            Else
+                Cells(i, 13).Interior.ColorIndex = 0 ' No color
+            End If
+        Next i
+
+        ' Calculate the greatest values
+        Dim Greatest_Total_Volume As Double
+        Dim Greatest_percent_increase As Double
+        Dim Greatest_percent_decrease As Double
+
+        Greatest_percent_increase = Application.WorksheetFunction.Max(ws.Range("M2:M" & lastrow))
+        Cells(2, 20).Value = Greatest_percent_increase
+        Cells(2, 20).NumberFormat = "#0.00%"
+
+        Greatest_percent_decrease = Application.WorksheetFunction.Min(ws.Range("M2:M" & lastrow))
+        Cells(3, 20).Value = Greatest_percent_decrease
+        Cells(3, 20).NumberFormat = "#0.00%"
+
+        Greatest_Total_Volume = Application.WorksheetFunction.Max(ws.Range("N2:N" & lastrow))
+        Cells(4, 20).Value = Greatest_Total_Volume
+
+        ' Find row numbers for greatest values
+        Dim greatestPercentIncreaseRow As Long
+        Dim greatestPercentDecreaseRow As Long
+        Dim greatestTotalVolumeRow As Long
+        
+        greatestPercentIncreaseRow = Application.WorksheetFunction.Match(Greatest_percent_increase, ws.Range("M2:M" & lastrow), 0)
+        greatestPercentDecreaseRow = Application.WorksheetFunction.Match(Greatest_percent_decrease, ws.Range("M2:M" & lastrow), 0)
+        greatestTotalVolumeRow = Application.WorksheetFunction.Match(Greatest_Total_Volume, ws.Range("N2:N" & lastrow), 0)
+
+        ' Output the greatest values
+        ws.Range("S2").Value = ws.Cells(greatestPercentIncreaseRow + 1, 9).Value ' Ticker with greatest percent increase
+        ws.Range("S3").Value = ws.Cells(greatestPercentDecreaseRow + 1, 9).Value ' Ticker with greatest percent decrease
+        ws.Range("S4").Value = ws.Cells(greatestTotalVolumeRow + 1, 9).Value ' Ticker with greatest total volume
+
+
+End Sub
